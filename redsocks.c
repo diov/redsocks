@@ -34,6 +34,7 @@
 #include "redsocks.h"
 #include "utils.h"
 #include "libevent-compat.h"
+#include "android.h"
 
 
 #define REDSOCKS_RELAY_HALFBUFF  4096
@@ -616,6 +617,7 @@ void redsocks_close_internal(int fd, const char* file, int line, const char *fun
 
 static void redsocks_accept_client(int fd, short what, void *_arg)
 {
+	printf("redsocks_accept_client");
 	redsocks_instance *self = _arg;
 	redsocks_client   *client = NULL;
 	struct sockaddr_in clientaddr;
@@ -658,7 +660,9 @@ static void redsocks_accept_client(int fd, short what, void *_arg)
 	}
 
 	error = getdestaddr(client_fd, &clientaddr, &myaddr, &destaddr);
+	printf("%s:%u\n", inet_ntoa(client->destaddr.sin_addr), ntohs(client->destaddr.sin_port));
 	if (error) {
+		printf("getdestaddr.\n");
 		goto fail;
 	}
 
@@ -786,6 +790,8 @@ static int redsocks_init_instance(redsocks_instance *instance)
 		goto fail;
 	}
 
+	protect_socket(fd);
+	printf("start protect");
 	error = setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
 	if (error) {
 		log_errno(LOG_ERR, "setsockopt");
@@ -793,20 +799,24 @@ static int redsocks_init_instance(redsocks_instance *instance)
 	}
 
 	error = bind(fd, (struct sockaddr*)&instance->config.bindaddr, sizeof(instance->config.bindaddr));
+	printf("%s:%u\n", inet_ntoa(instance->config.bindaddr.sin_addr), ntohs(instance->config.bindaddr.sin_port));
 	if (error) {
 		log_errno(LOG_ERR, "bind");
+		printf("bind error");
 		goto fail;
 	}
 
 	error = fcntl_nonblock(fd);
 	if (error) {
 		log_errno(LOG_ERR, "fcntl");
+		printf("fcntl error");
 		goto fail;
 	}
 
 	error = listen(fd, instance->config.listenq);
 	if (error) {
 		log_errno(LOG_ERR, "listen");
+		printf("listen error");
 		goto fail;
 	}
 
@@ -818,6 +828,7 @@ static int redsocks_init_instance(redsocks_instance *instance)
 	error = tracked_event_add(&instance->listener, NULL);
 	if (error) {
 		log_errno(LOG_ERR, "event_add");
+		printf("event_add error");
 		goto fail;
 	}
 

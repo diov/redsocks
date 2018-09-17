@@ -213,6 +213,12 @@ static int getdestaddr_iptables(int fd, const struct sockaddr_in *client, const 
 	socklen_t socklen = sizeof(*destaddr);
 	int error;
 
+//#ifdef __ANDROID__
+//	destaddr->sin_family = AF_INET;
+//	destaddr->sin_addr.s_addr = inet_addr("139.162.123.134");
+//	destaddr->sin_port = htons(443);
+//	return 0;
+//#endif
 	error = getsockopt(fd, SOL_IP, SO_ORIGINAL_DST, destaddr, &socklen);
 	if (error) {
 		log_errno(LOG_WARNING, "getsockopt");

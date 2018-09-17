@@ -26,6 +26,7 @@
 #include "utils.h"
 #include "redsocks.h" // for redsocks_close
 #include "libc-compat.h"
+#include "android.h"
 
 int red_recv_udp_pkt(int fd, char *buf, size_t buflen, struct sockaddr_in *inaddr, struct sockaddr_in *toaddr)
 {
@@ -47,7 +48,7 @@ int red_recv_udp_pkt(int fd, char *buf, size_t buflen, struct sockaddr_in *inadd
 
 	pktlen = recvmsg(fd, &msg, 0);
 	if (pktlen == -1) {
-		log_errno(LOG_WARNING, "recvfrom");
+		log_error(LOG_WARNING, "recvfrom");
 		return -1;
 	}
 
@@ -116,6 +117,12 @@ struct bufferevent* red_connect_relay(struct sockaddr_in *addr, evbuffercb write
 	int error;
 
 	relay_fd = socket(AF_INET, SOCK_STREAM, 0);
+#ifdef __ANDROID__
+	if (protect_socket(relay_fd) == -1) {
+		log_errno(LOG_ERR, "protect_socket failed.");
+		goto fail;
+	}
+#endif
 	if (relay_fd == -1) {
 		log_errno(LOG_ERR, "socket");
 		goto fail;

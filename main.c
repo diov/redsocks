@@ -99,7 +99,8 @@ int main(int argc, char **argv)
 
 
 	FILE *f = fopen(confname, "r");
-	if (!f) {
+    printf("Start fopen");
+    if (!f) {
 		perror("Unable to open config file");
 		return EXIT_FAILURE;
 	}
@@ -127,6 +128,7 @@ int main(int argc, char **argv)
 	memset(terminators, 0, sizeof(terminators));
 
 	FOREACH(ss, subsystems) {
+		printf("start init");
 		if ((*ss)->init) {
 			error = (*ss)->init();
 			if (error)
